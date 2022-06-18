@@ -78,7 +78,8 @@ class Usuario(db.Model):
             "fono": self.fono,
             "correo": self.correo,
             "estado": self.estado,
-            "comuna_id": self.comuna_id            
+            "comuna_id": self.comuna_id,
+            "tipo": self.tipo          
         }
     
     def save(self):

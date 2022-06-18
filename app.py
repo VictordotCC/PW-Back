@@ -26,10 +26,10 @@ db.init_app(app)
 
 Migrate(app, db)
 
-@app.route('/carrito', methods=['GET', 'POST'])
+@app.route('/carrito', methods=['POST'])
 def carrito():
     data = request.values
-    cart = data.get('carrito').split(',')
+    cart = data.getlist('carrito[]')
     cart_list = []
     for item in cart:
         producto = Producto.query.filter_by(codigo=item).first()
@@ -114,7 +114,7 @@ def logout():
     pass
 
 
-@app.route('/perfil/<id>', methods=['GET'])
+@app.route('/perfil/<id>', methods=['GET']) #no utilizado
 def perfil(id):
     user = Usuario.query.get(id)
     tipo = user.tipo
@@ -136,7 +136,7 @@ def registrar_producto():
     producto.codigo = producto.nombre[0:3] + producto.categoria[0:3] + str(randint(1000,9999))
     producto.estado = True
 
-    if (Producto.query.filter_by(codigo=producto.codigo).first() is None):
+    if (Producto.query.filter_by(nombre=producto.nombre).first() is None):
         producto.save()
         return jsonify("Producto registrado"), 200
     return jsonify("Producto ya existe"), 400
