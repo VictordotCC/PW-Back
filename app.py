@@ -1,0 +1,190 @@
+# 0. ejecutamos pip install flask flask-sqlalchemy flask-migrate flask-cors
+# 1. Crear modelos
+# 2. importamos las librerias de flask
+# 8. comando para iniciar mi app flask: flask db init
+# 9. comando para migrar mis modelos:   flask db migrate
+# 10. comando para crear nuestros modelos como tablas : flask db upgrade
+# 11. comando para iniciar la app flask: flask run
+import json
+from random import randint
+from flask import Flask, redirect, request, jsonify, render_template, url_for
+from flask_migrate import Migrate
+from models import db, Usuario, Comuna, Region, Producto
+from flask_cors import CORS, cross_origin
+
+# 3. instanciamos la app
+app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+app.url_map.strict_slashes = False
+app.config['DEBUG'] = True
+app.config['ENV'] = 'development'
+app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+
+db.init_app(app)
+
+Migrate(app, db)
+
+@app.route('/carrito', methods=['GET', 'POST'])
+def carrito():
+    data = request.values
+    cart = data.get('carrito').split(',')
+    cart_list = []
+    for item in cart:
+        producto = Producto.query.filter_by(codigo=item).first()
+        cart_list.append(producto)
+    try:
+        cart_mapped = list(map(lambda x: x.serialize(), cart_list))
+    except:
+        cart_mapped = []
+    return jsonify(cart_mapped)
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.values
+    user = data.get('email')
+    password = data.get('pass')
+    user = Usuario.query.filter_by(correo=user).first()
+    if user is not None and user.password == password:
+        return jsonify(user.serialize()), 200
+    return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+
+@app.route('/registrar', methods=['POST'])
+def registro():
+    data = request.values
+    user = Usuario()
+
+    user.primer_nombre = data.get('nombre')
+    user.apellido_paterno = data.get('apellido')
+    rut_con_dv = data.get('rut')
+    #Trata el rut para quitar el dv
+    rut = rut_con_dv.split('-')[0]
+    user.rut = rut.replace('.', '')
+    user.dv = rut_con_dv.split('-')[1]
+    
+    #sigue
+    user.correo = data.get('email')
+    user.direccion = data.get('direccion')
+    region = data.get('Nombre_region')
+    comuna = data.get('Nombre_comuna')   
+
+    #tratamiento comuna
+    comuna_id = Comuna.query.filter_by(nombre=comuna).first()
+    print(comuna_id is None)
+    if comuna_id is None:
+        comuna_sql = Comuna()
+        comuna_sql.nombre = comuna
+        region_id = Region.query.filter_by(nombre=region).first()
+        if region_id is None:
+            region_sql = Region()
+            region_sql.nombre = region
+            region_sql.save()
+            region_id = region_sql.id_region
+        else:
+            region_id = region_id.id_region
+        comuna_sql.region_id = region_id
+        comuna_sql.save()
+        comuna_id = comuna_sql.id_comuna
+    else:
+        comuna_id = comuna_id.id_comuna
+    user.comuna_id = comuna_id
+    
+    #sigue
+    user.fono = data.get('fono')
+    user.password = data.get('password')
+    user.estado = True
+
+    #Maneja sucripcion
+    if data.get('suscripcion') == 'true':
+        user.suscrito = True
+    else:
+        user.suscrito = False
+
+    user.tipo = 'Cliente'
+
+    if (Usuario.query.filter_by(rut=user.rut).first() is None
+        and Usuario.query.filter_by(correo=user.correo).first() is None):
+        user.save()
+        return jsonify("Usuario registrado"), 200
+    return jsonify("Usuario ya existe"), 400
+
+@app.route('/logout')
+def logout():
+    pass
+
+
+@app.route('/perfil/<id>', methods=['GET'])
+def perfil(id):
+    user = Usuario.query.get(id)
+    tipo = user.tipo
+    return jsonify(user.serialize())
+
+@app.route('/registrar-producto', methods=['POST'])
+def registrar_producto():
+    file = request.files['v_file']
+    file.save('static/img/' + file.filename) # guarda la imagen en la carpeta static/img
+    data = request.values
+    producto = Producto()
+    producto.nombre = data.get('v_prod')
+    producto.descripcion = data.get('v_desc')
+    producto.categoria = data.get('v_cat')
+    producto.valor_venta = data.get('v_precio')
+    producto.stock = data.get('v_stock')
+    producto.imagen = file.filename # guarda el nombre del archivo en la base de datos
+    #genera el codigo de barras
+    producto.codigo = producto.nombre[0:3] + producto.categoria[0:3] + str(randint(1000,9999))
+    producto.estado = True
+
+    if (Producto.query.filter_by(codigo=producto.codigo).first() is None):
+        producto.save()
+        return jsonify("Producto registrado"), 200
+    return jsonify("Producto ya existe"), 400
+
+@app.route('/productos', methods=['GET'])
+def productos():
+    productos = Producto.query.all()
+    productos = list(map(lambda x: x.serialize(), productos))
+    return jsonify(productos), 200
+
+    
+
+
+#METODOS DEL PROFESOR
+
+
+# Ruta para consultar todos los Usuarios
+@app.route('/usuarios', methods=['GET'])
+def getUsuarios():
+    user = Usuario.query.all()
+    user = list(map(lambda x: x.serialize(), user))
+    return jsonify(user),200
+
+
+# Borrar usuario
+@app.route('/usuarios/<id>', methods=['DELETE'])
+def deleteUsuario(id):
+    user = Usuario.query.get(id)
+    Usuario.delete(user)
+    return jsonify(user.serialize()),200
+
+
+# Modificar Usuario
+@app.route('/usuarios/<id>', methods=['PUT'])
+def updateUsuario(id):
+    user = Usuario.query.get(id)
+
+    user.primer_nombre = request.json.get('primer_nombre')
+    user.segundo_nombre = request.json.get('segundo_nombre')
+    user.apellido_paterno = request.json.get('apellido_paterno')
+    user.apellido_materno = request.json.get('apellido_materno')
+    user.direccion = request.json.get('direccion')
+
+    Usuario.save(user)
+
+    return jsonify(user.serialize()),200
+
+
+# 4. Configurar los puertos nuestra app 
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)
