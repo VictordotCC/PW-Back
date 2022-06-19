@@ -30,15 +30,18 @@ Migrate(app, db)
 def carrito():
     data = request.values
     cart = data.getlist('carrito[]')
+    if len(cart) <= 0:
+        return jsonify({None})
     cart_list = []
     for item in cart:
+        cantidad = cart.count(item)
         producto = Producto.query.filter_by(codigo=item).first()
-        cart_list.append(producto)
-    try:
-        cart_mapped = list(map(lambda x: x.serialize(), cart_list))
-    except:
-        cart_mapped = []
-    return jsonify(cart_mapped)
+        producto_final = producto.serialize()
+        producto_final["cantidad"] = cantidad
+        if producto_final not in cart_list:
+            cart_list.append(producto_final)
+    print(cart_list)              
+    return jsonify(cart_list)
 
 @app.route('/login', methods=['POST'])
 def login():
