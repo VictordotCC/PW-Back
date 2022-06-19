@@ -39,8 +39,7 @@ def carrito():
         producto_final = producto.serialize()
         producto_final["cantidad"] = cantidad
         if producto_final not in cart_list:
-            cart_list.append(producto_final)
-    print(cart_list)              
+            cart_list.append(producto_final)              
     return jsonify(cart_list)
 
 @app.route('/login', methods=['POST'])
