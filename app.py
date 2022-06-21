@@ -5,9 +5,9 @@
 # 9. comando para migrar mis modelos:   flask db migrate
 # 10. comando para crear nuestros modelos como tablas : flask db upgrade
 # 11. comando para iniciar la app flask: flask run
-import json
+# 12. desde carpeta de front, ejecutar python -m http.server y acceder a localhost:8000
 from random import randint
-from flask import Flask, redirect, request, jsonify, render_template, url_for
+from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Usuario, Comuna, Region, Producto
 from flask_cors import CORS, cross_origin
@@ -17,6 +17,7 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.url_map.strict_slashes = False
+
 app.config['DEBUG'] = True
 app.config['ENV'] = 'development'
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
