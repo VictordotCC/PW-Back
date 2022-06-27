@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 984acfe6f838
+Revision ID: d578676f0d70
 Revises: 
-Create Date: 2022-06-18 17:02:28.126883
+Create Date: 2022-06-27 17:59:16.588746
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '984acfe6f838'
+revision = 'd578676f0d70'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -65,11 +65,9 @@ def upgrade():
     sa.Column('total', sa.Integer(), nullable=False),
     sa.Column('estado', sa.Boolean(), nullable=False),
     sa.Column('cliente_id', sa.Integer(), nullable=False),
-    sa.Column('vendedor_id', sa.Integer(), nullable=False),
     sa.Column('despacho_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['cliente_id'], ['Usuario.id_usuario'], ),
     sa.ForeignKeyConstraint(['despacho_id'], ['Despacho.id_despacho'], ),
-    sa.ForeignKeyConstraint(['vendedor_id'], ['Usuario.id_usuario'], ),
     sa.PrimaryKeyConstraint('id_venta')
     )
     op.create_table('Comuna',
@@ -92,7 +90,7 @@ def upgrade():
     sa.Column('id_detalle', sa.Integer(), nullable=False),
     sa.Column('cantidad', sa.Integer(), nullable=False),
     sa.Column('valor', sa.Integer(), nullable=False),
-    sa.Column('descuento', sa.Integer(), nullable=False),
+    sa.Column('descuento', sa.Integer(), nullable=True),
     sa.Column('estado', sa.Boolean(), nullable=False),
     sa.Column('venta_id', sa.Integer(), nullable=False),
     sa.Column('producto_id', sa.Integer(), nullable=False),
@@ -114,7 +112,7 @@ def upgrade():
     sa.Column('correo', sa.String(length=250), nullable=False),
     sa.Column('estado', sa.Boolean(), nullable=False),
     sa.Column('comuna_id', sa.Integer(), nullable=False),
-    sa.Column('password', sa.String(length=250), nullable=False),
+    sa.Column('password', sa.String(length=250), nullable=True),
     sa.Column('suscrito', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['comuna_id'], ['Comuna.id_comuna'], ),
     sa.PrimaryKeyConstraint('id_usuario')

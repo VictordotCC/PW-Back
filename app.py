@@ -7,9 +7,10 @@
 # 11. comando para iniciar la app flask: flask run
 # 12. desde carpeta de front, ejecutar python -m http.server y acceder a localhost:8000
 from random import randint
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from models import db, Usuario, Comuna, Region, Producto
+from models import db, Usuario, Comuna, Region, Producto, Venta, Detalle, Despacho
 from flask_cors import CORS, cross_origin
 
 # 3. instanciamos la app
@@ -74,7 +75,6 @@ def registro():
 
     #tratamiento comuna
     comuna_id = Comuna.query.filter_by(nombre=comuna).first()
-    print(comuna_id is None)
     if comuna_id is None:
         comuna_sql = Comuna()
         comuna_sql.nombre = comuna
@@ -112,17 +112,6 @@ def registro():
         return jsonify("Usuario registrado"), 200
     return jsonify("Usuario ya existe"), 400
 
-@app.route('/logout')
-def logout():
-    pass
-
-
-@app.route('/perfil/<id>', methods=['GET']) #no utilizado
-def perfil(id):
-    user = Usuario.query.get(id)
-    tipo = user.tipo
-    return jsonify(user.serialize())
-
 @app.route('/registrar-producto', methods=['POST'])
 def registrar_producto():
     file = request.files['v_file']
@@ -149,6 +138,65 @@ def productos():
     productos = Producto.query.all()
     productos = list(map(lambda x: x.serialize(), productos))
     return jsonify(productos), 200
+
+@app.route('/comprar', methods=['POST'])
+def comprar():
+    data = request.values
+    cart = data.getlist('carrito[]')
+    userid = data.get('user_id')
+    voucher = []
+    subtotal = 0
+    for item in cart:
+        cantidad = cart.count(item)
+        if cantidad > 0:
+            producto = Producto.query.filter_by(codigo=item).first()
+            subtotal += producto.valor_venta * cantidad
+            #[Nombre, codigo, cantidad, valor unitario, valor total]
+            voucher.append([producto.nombre, producto.codigo, cantidad, producto.valor_venta, producto.valor_venta * cantidad])
+            producto.stock -= 1
+            producto.save()
+            cart = list(filter(lambda x: x != item, cart))
+
+    #Calculo total venta e ingreso a bd
+    iva = subtotal * 0.19
+    total = subtotal + iva
+    venta = Venta()
+    venta.fecha = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    venta.sub_total = subtotal
+    venta.iva = iva
+    venta.total = total
+    venta.estado = True
+    venta.cliente_id = userid
+    venta.save()
+
+    #Ingreso a bd detalle venta
+    for item in voucher:
+         #[Nombre, codigo, cantidad, valor unitario, valor total]
+        detalle = Detalle()
+        detalle.cantidad = item[2]
+        detalle.valor = item[4]
+        detalle.estado = True
+        detalle.venta_id = venta.id_venta
+        detalle.producto_id = Producto.query.filter_by(codigo=item[1]).first().id_producto
+        detalle.save()
+
+    #Ingreso del Despacho
+    despacho = Despacho()
+    despacho.direccion = data.get('direccion')
+    despacho.rut_recibe = data.get('user_rut')
+    despacho.nombre_recibe = data.get('user_nombre')
+    despacho.esto_despacho = 0 #0 = pendiente, 1 = preparando, 2 = en camino, 3 = entregado
+    despacho.venta_id = venta.id_venta
+    despacho.comuna_id = data.get('comuna')
+    despacho.save()
+
+    #actualizacion venta con id despacho
+    venta = Venta.query.filter_by(id_venta=venta.id_venta).first()
+    venta.despacho_id = despacho.id_despacho
+    venta.save()
+
+    #TODO: Crear Voucher
+    return jsonify(voucher), 200
 
     
 

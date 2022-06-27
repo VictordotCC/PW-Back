@@ -62,7 +62,7 @@ class Usuario(db.Model):
     correo = db.Column(db.String(250), nullable=False)
     estado = db.Column(db.Boolean, nullable=False)
     comuna_id = db.Column(db.Integer, db.ForeignKey('Comuna.id_comuna'), nullable=False)
-    password = db.Column(db.String(250), nullable=False)
+    password = db.Column(db.String(250), nullable=True)
     suscrito = db.Column(db.Boolean, nullable=False)
 
     def serialize(self):
@@ -246,6 +246,29 @@ class Despacho(db.Model):
     venta_id = db.Column(db.Integer, db.ForeignKey('Venta.id_venta'), nullable=False)
     comuna_id = db.Column(db.Integer, db.ForeignKey('Comuna.id_comuna'), nullable=False)
 
+    def serialize(self):
+        return{
+            "id_despacho": self.id_despacho,
+            "direccion": self.direccion,
+            "fecha_entrega": self.fecha_entrega,
+            "rut_recibe": self.rut_recibe,
+            "nombre_recibe": self.nombre_recibe,
+            "esto_despacho": self.esto_despacho,
+            "venta_id": self.venta_id,
+            "comuna_id": self.comuna_id
+        }
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
 class Venta(db.Model):
     __tablename__ = 'Venta'
     id_venta = db.Column(db.Integer, primary_key=True)
@@ -256,7 +279,6 @@ class Venta(db.Model):
     total = db.Column(db.Integer, nullable=False)
     estado = db.Column(db.Boolean, nullable=False)
     cliente_id = db.Column(db.Integer, db.ForeignKey('Usuario.id_usuario'), nullable=False)
-    vendedor_id = db.Column(db.Integer, db.ForeignKey('Usuario.id_usuario'), nullable=False)
     despacho_id = db.Column(db.Integer, db.ForeignKey('Despacho.id_despacho'), nullable=True)
 
     def serialize(self):
@@ -269,7 +291,6 @@ class Venta(db.Model):
             "total": self.total,
             "estado": self.estado,
             "cliente_id": self.cliente_id,
-            "vendedor_id": self.vendedor_id,
             "despacho_id": self.despacho_id
         }
 
@@ -289,7 +310,7 @@ class Detalle(db.Model):
     id_detalle = db.Column(db.Integer, primary_key=True)
     cantidad = db.Column(db.Integer, nullable=False)
     valor = db.Column(db.Integer, nullable=False)
-    descuento = db.Column(db.Integer, nullable=False)
+    descuento = db.Column(db.Integer, nullable=True)
     estado = db.Column(db.Boolean, nullable=False)
     venta_id = db.Column(db.Integer, db.ForeignKey('Venta.id_venta'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('Producto.id_producto'), nullable=False)
