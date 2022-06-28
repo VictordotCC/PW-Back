@@ -152,7 +152,7 @@ def comprar():
             producto = Producto.query.filter_by(codigo=item).first()
             subtotal += producto.valor_venta * cantidad
             #[Nombre, codigo, cantidad, valor unitario, valor total]
-            voucher.append([producto.nombre, producto.codigo, cantidad, producto.valor_venta, producto.valor_venta * cantidad])
+            voucher.append({'nombre': producto.nombre, 'codigo': producto.codigo, 'cantidad': cantidad, 'valor_unitario': producto.valor_venta, 'valor_total': producto.valor_venta * cantidad})
             producto.stock -= 1
             producto.save()
             cart = list(filter(lambda x: x != item, cart))
@@ -173,11 +173,11 @@ def comprar():
     for item in voucher:
          #[Nombre, codigo, cantidad, valor unitario, valor total]
         detalle = Detalle()
-        detalle.cantidad = item[2]
-        detalle.valor = item[4]
+        detalle.cantidad = item['cantidad']
+        detalle.valor = item['valor_total']
         detalle.estado = True
         detalle.venta_id = venta.id_venta
-        detalle.producto_id = Producto.query.filter_by(codigo=item[1]).first().id_producto
+        detalle.producto_id = Producto.query.filter_by(codigo=item['codigo']).first().id_producto
         detalle.save()
 
     #Ingreso del Despacho
@@ -195,7 +195,8 @@ def comprar():
     venta.despacho_id = despacho.id_despacho
     venta.save()
 
-    #TODO: Crear Voucher
+    voucherid = str(randint(1,9999)) + str(userid) + str(randint(1,9999))
+    voucher.append({'voucher': voucherid, 'id_despacho': despacho.id_despacho, 'subtotal': subtotal, 'iva': iva, 'total': total})
     return jsonify(voucher), 200
 
     
