@@ -139,6 +139,26 @@ def productos():
     productos = list(map(lambda x: x.serialize(), productos))
     return jsonify(productos), 200
 
+@app.route('/producto/<id>', methods=['GET', 'PUT', 'DELETE'])
+def producto(id):
+    if request.method == 'GET':
+        producto = Producto.query.filter_by(id_producto=id).first()
+        if producto is None:
+            return jsonify({'error': 'Producto no encontrado'}), 404
+        return jsonify(producto.serialize()), 200
+    elif request.method == 'PUT':
+        files = request.files['edit_file']
+        #TODO: checkear si se subio una imagen
+        data =request.values
+        #TODO: tratamiento de datos
+        return jsonify("Producto editado"), 200
+    elif request.method == 'DELETE':
+        producto = Producto.query.get(id)
+        if producto is None:
+            return jsonify({'error': 'Producto no encontrado'}), 404
+        producto.delete()
+        return jsonify(producto.serialize()), 200
+
 @app.route('/comprar', methods=['POST'])
 def comprar():
     data = request.values
