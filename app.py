@@ -6,6 +6,7 @@
 # 10. comando para crear nuestros modelos como tablas : flask db upgrade
 # 11. comando para iniciar la app flask: flask run
 # 12. desde carpeta de front, ejecutar python -m http.server y acceder a localhost:8000
+import os
 from random import randint
 from datetime import datetime
 from flask import Flask, request, jsonify
@@ -147,15 +148,28 @@ def producto(id):
             return jsonify({'error': 'Producto no encontrado'}), 404
         return jsonify(producto.serialize()), 200
     elif request.method == 'PUT':
-        files = request.files['edit_file']
-        #TODO: checkear si se subio una imagen
+        file = request.files['edit_file']
+        producto = Producto.query.get(id)
+        if producto is None:
+            print("error al editar")
+            return jsonify({'error': 'Producto no encontrado'}), 404
+        if file.filename != '':
+            os.remove('static/img/' + producto.imagen)
+            file.save('static/img/' + file.filename)
+            producto.imagen = file.filename
         data =request.values
-        #TODO: tratamiento de datos
-        return jsonify("Producto editado"), 200
+        producto.nombre = data.get('edit_prod')
+        producto.descripcion = data.get('edit_desc')
+        producto.categoria = data.get('edit_cat')
+        producto.valor_venta = data.get('edit_precio')
+        producto.stock = data.get('edit_stock')
+        producto.save()
+        return jsonify({'estado':'Producto editado'}), 200
     elif request.method == 'DELETE':
         producto = Producto.query.get(id)
         if producto is None:
             return jsonify({'error': 'Producto no encontrado'}), 404
+        os.remove('static/img/'+ producto.imagen)
         producto.delete()
         return jsonify(producto.serialize()), 200
 
