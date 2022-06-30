@@ -110,7 +110,7 @@ def registro():
     if (Usuario.query.filter_by(rut=user.rut).first() is None
         and Usuario.query.filter_by(correo=user.correo).first() is None):
         user.save()
-        return jsonify("Usuario registrado"), 200
+        return jsonify(user.serialize()), 200
     return jsonify("Usuario ya existe"), 400
 
 @app.route('/registrar-producto', methods=['POST'])
