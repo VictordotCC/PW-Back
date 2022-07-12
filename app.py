@@ -140,6 +140,14 @@ def productos():
     productos = list(map(lambda x: x.serialize(), productos))
     return jsonify(productos), 200
 
+@app.route('/seguimiento/<id>', methods=['GET'])
+def seguimiento(id):
+    despacho = Despacho.query.get(id)
+    if despacho is None:
+        return jsonify({'error': 'No encontrado'}), 404
+    return jsonify(despacho.serialize()), 200
+
+
 @app.route('/producto/<id>', methods=['GET', 'PUT', 'DELETE'])
 def producto(id):
     if request.method == 'GET':
@@ -151,7 +159,6 @@ def producto(id):
         file = request.files['edit_file']
         producto = Producto.query.get(id)
         if producto is None:
-            print("error al editar")
             return jsonify({'error': 'Producto no encontrado'}), 404
         if file.filename != '':
             os.remove('static/img/' + producto.imagen)
@@ -233,42 +240,7 @@ def comprar():
     voucher.append({'voucher': voucherid, 'id_despacho': despacho.id_despacho, 'subtotal': subtotal, 'iva': iva, 'total': total})
     return jsonify(voucher), 200
 
-    
 
-
-#METODOS DEL PROFESOR
-
-
-# Ruta para consultar todos los Usuarios
-@app.route('/usuarios', methods=['GET'])
-def getUsuarios():
-    user = Usuario.query.all()
-    user = list(map(lambda x: x.serialize(), user))
-    return jsonify(user),200
-
-
-# Borrar usuario
-@app.route('/usuarios/<id>', methods=['DELETE'])
-def deleteUsuario(id):
-    user = Usuario.query.get(id)
-    Usuario.delete(user)
-    return jsonify(user.serialize()),200
-
-
-# Modificar Usuario
-@app.route('/usuarios/<id>', methods=['PUT'])
-def updateUsuario(id):
-    user = Usuario.query.get(id)
-
-    user.primer_nombre = request.json.get('primer_nombre')
-    user.segundo_nombre = request.json.get('segundo_nombre')
-    user.apellido_paterno = request.json.get('apellido_paterno')
-    user.apellido_materno = request.json.get('apellido_materno')
-    user.direccion = request.json.get('direccion')
-
-    Usuario.save(user)
-
-    return jsonify(user.serialize()),200
 
 
 # 4. Configurar los puertos nuestra app 
